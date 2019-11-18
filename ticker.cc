@@ -1,9 +1,9 @@
 #include "ticker.hh"
 
 
-void timed_obj::wait(int time)
+void timed_obj::wait(int time, wait_type type)
 {
-    ticker::waiter w(time);
+    ticker::waiter w(time, type);
     chronos_.waiters_list.push_back(w);
     w.cv.wait(lck_);
 }
@@ -14,16 +14,28 @@ void ticker::start()
     {
         for (auto it = waiters_list.begin(); it != waiters_list.end();)
         {
-            if (it->time == 0)
+            if (it->time < 0) throw std::out_of_range("Waiter's time < 0");
+
+            bool time_out = false;
+            switch(it->type)
+            {
+                case WAIT_FOR:
+                time_out = (it->time == 0);
+                it->time--;
+                break;
+
+                case WAIT_TIL:
+                time_out = (it->time == time);
+                if (it->time < time) throw std::out_of_range("Waiter skipped");
+                break;
+            }
+
+            if (time_out)
             {
                 it->cv.notify_one();
                 it = waiters_list.erase(it);
             }
-            else 
-            {
-                it->time--;
-                it++;
-            }
+            else it++;
         }
     }
 }

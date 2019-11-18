@@ -4,6 +4,11 @@
 
 class timed_obj;
 
+enum wait_type {
+    WAIT_FOR = 0,
+    WAIT_TIL = 1
+};
+
 //Time manager class
 class ticker
 {
@@ -12,10 +17,12 @@ private:
     {
         int time;
         std::condition_variable cv;
+        wait_type type;
 
-        inline waiter(int t) :
+        inline waiter(int t, wait_type tp) :
             time(t),
-            cv()
+            cv(),
+            type(tp)
         {}
     };
 
@@ -49,5 +56,5 @@ public:
     {} 
 
     //Waits until "time" ticks pass in ticker::start main cycle
-    void wait(int time);
+    void wait(int time, wait_type type);
 };

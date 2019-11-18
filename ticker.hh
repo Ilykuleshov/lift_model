@@ -55,6 +55,6 @@ public:
         lck_(std::unique_lock(chronos.act_mut))
     {} 
 
-    //Waits until "time" ticks pass in ticker::start main cycle
+    //Waits for "time" ticks or until time=="time" (depending on "type") in ticker::start main cycle
     void wait(int time, wait_type type);
 };

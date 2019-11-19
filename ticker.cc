@@ -1,10 +1,11 @@
 #include "ticker.hh"
 
 
-void timed_obj::wait(int time, wait_type type)
+void timed_obj::wait(int time, wait_type type, bool priority)
 {
     ticker::waiter w(time, type);
-    chronos_.waiters_list.push_back(w);
+    if (priority) chronos_.waiters_list.push_front(w);
+    else          chronos_.waiters_list.push_back(w);
     w.cv.wait(lck_);
 }
 

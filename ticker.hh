@@ -56,5 +56,5 @@ public:
     {} 
 
     //Waits for "time" ticks or until time=="time" (depending on "type") in ticker::start main cycle
-    void wait(int time, wait_type type);
+    void wait(int time, wait_type type, bool priority);
 };

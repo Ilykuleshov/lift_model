@@ -11,8 +11,9 @@ void timed_obj::wait(int time, wait_type type, bool priority)
 
 void ticker::start()
 {
-    for (size_t time = 0; !waiters_list.empty(); time++)
-    {
+    for (long time = 0; !waiters_list.empty(); time++)
+    {   
+        //Process waiters list
         for (auto it = waiters_list.begin(); it != waiters_list.end();)
         {
             if (it->time < 0) throw std::out_of_range("Waiter's time < 0");
@@ -20,6 +21,7 @@ void ticker::start()
             bool time_out = false;
             switch(it->type)
             {
+                //wait_for waiters
                 case WAIT_FOR:
                 time_out = (it->time == 0);
                 it->time--;

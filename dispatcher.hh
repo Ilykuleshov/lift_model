@@ -13,15 +13,15 @@ enum direction_flag
     DOWN = 0b10
 };
 
-//Define flag operations for direction_flag
-#define DEFFLAGOP(OP, AMPR) \
-inline direction_flag ## AMPR operator ## OP (direction_flag ## AMPR a,  direction_flag b) \
-{ return (direction_flag ## AMPR)((int ## AMPR)a OP (int) b); }
 
-DEFFLAGOP(|,)
-DEFFLAGOP(&,)
-DEFFLAGOP(|=,&)
-DEFFLAGOP(&=,&)
+//Define flag operations for direction_flag
+#define DEFFLAGOP(OP) \
+inline direction_flag operator ## OP (const direction_flag a,  const direction_flag& b) \
+{ return (direction_flag)((int)a OP (int) b); }
+
+DEFFLAGOP(|)
+DEFFLAGOP(&)
+DEFFLAGOP(^)
 
 #undef DEFFLAGOP
 
@@ -35,7 +35,10 @@ direction_flag dir_to_flag(const direction& that)
     return DIR_TO_FLAG[that + 1];
 }
 
-//Person is the floor he needs, yet he can't be copied
+inline int sgn(int val)
+{ return (0 < val) - (val < 0); }
+
+//Person type for better code
 typedef std::unique_ptr<int> person;
 
 inline bool operator<(const person& a, const person& b)
@@ -52,7 +55,7 @@ class dispatcher : private timed_obj
 {
 private:
     std::vector<lift> lift_vec_;
-    std::vector<std::list<person>> floors_;
+    std::vector<std::multiset<person>> floors_;
     std::vector<event> timeline_; //sorted by time - smallest first
     std::vector<direction_flag> ord_log_;
 

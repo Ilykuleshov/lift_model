@@ -10,9 +10,6 @@ struct LIFTSPEC
     int T_out;
 };
 
-inline int sgn(int val)
-{ return (0 < val) - (val < 0); }
-
 class lift : private timed_obj
 {
 private:

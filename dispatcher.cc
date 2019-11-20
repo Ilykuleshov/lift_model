@@ -1,4 +1,3 @@
-#include "dispatcher.hh"
 #include "lift.hh"
 #include <algorithm>
 
@@ -18,6 +17,8 @@ std::multiset<person> dispatcher::clear_floor(int floor, direction dir)
             res.insert(std::move(flr.extract(std::prev(flr.end())).value()));
 
     ord_log_[floor] = (direction_flag)(ord_log_[floor] - dir_to_flag(dir)); //Order is done
+
+    return res;
 }
 
 void dispatcher::service(event customer)

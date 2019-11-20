@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <set>
 
@@ -29,9 +31,15 @@ DEFFLAGOP(^)
 typedef int direction;
 
 //Converter
-direction_flag dir_to_flag(const direction& that)
+inline direction_flag dir_to_flag(const direction& that)
 {
-    static const std::array<direction_flag, 3> DIR_TO_FLAG = {DOWN, NONE, UP};
+    static const std::array<direction_flag, 3> DIR_TO_FLAG = 
+    {
+        direction_flag::DOWN, 
+        direction_flag::NONE, 
+        direction_flag::UP
+    };
+
     return DIR_TO_FLAG[that + 1];
 }
 
@@ -51,7 +59,7 @@ struct event
     int dst;
 };
 
-bool operator<(const event& a, const event& b)
+inline bool operator<(const event& a, const event& b)
 { return a.time < b.time; }
 
 class dispatcher : private timed_obj

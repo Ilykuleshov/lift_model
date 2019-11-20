@@ -1,3 +1,5 @@
+#pragma once
+
 #include <memory>
 #include <condition_variable>
 #include <list>
@@ -26,7 +28,7 @@ private:
         {}
     };
 
-    std::list<waiter&> waiters_list;
+    std::list<waiter> waiters_list;
     std::mutex act_mut;
 
     friend class timed_obj;

@@ -1,3 +1,4 @@
+#pragma once
 #include "dispatcher.hh"
 
 struct LIFTSPEC

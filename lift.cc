@@ -54,7 +54,7 @@ void lift::step()
         {
             person newcomer = std::move(newcomers.extract(i).value());
             wait(specs_.T_in, WAIT_FOR);
-            passengers.insert(newcomer);
+            passengers.insert(std::move(newcomer));
         }
         //For now - everyone who didn't fit dies)
     }

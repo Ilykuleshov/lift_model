@@ -1,12 +1,17 @@
 #include "ticker.hh"
 
-
 void timed_obj::wait(int time, wait_type type)
 {
-    ticker::waiter w(time, type);
-    if (priority_) chronos_.waiters_list.push_front(w);
-    else           chronos_.waiters_list.push_back(w);
-    w.cv.wait(lck_);
+    if (priority_) 
+    {
+        auto& w = chronos_.waiters_list.emplace_front(time, type); //Construct waiter in-place
+        w.cv.wait(lck_); //Condition-variable wait
+    }
+    else //Same, but add to end
+    {
+        auto& w = chronos_.waiters_list.emplace_back (time, type);
+        w.cv.wait(lck_);
+    }
 }
 
 void ticker::start()

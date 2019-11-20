@@ -16,7 +16,7 @@ enum direction_flag
 
 //Define flag operations for direction_flag
 #define DEFFLAGOP(OP) \
-inline direction_flag operator ## OP (const direction_flag a,  const direction_flag& b) \
+inline direction_flag operator OP (const direction_flag a,  const direction_flag& b) \
 { return (direction_flag)((int)a OP (int) b); }
 
 DEFFLAGOP(|)
@@ -51,22 +51,22 @@ struct event
     int dst;
 };
 
+bool operator<(const event& a, const event& b)
+{ return a.time < b.time; }
+
 class dispatcher : private timed_obj
 {
 private:
     std::vector<lift> lift_vec_;
     std::vector<std::multiset<person>> floors_;
-    std::vector<event> timeline_; //sorted by time - smallest first
     std::vector<direction_flag> ord_log_;
 
-    //Wait until newcomer.time
-    //Determine order direction & floor, place order
-    //Assign closest lift to order
-    void service(event newcomer);
+    //Service a new customer
+    void service(event customer);
 
 public:
     //sort timeline & start cycle
-    dispatcher(ticker& chronos, std::vector<event> orders); 
+    dispatcher(ticker& chronos, std::vector<event> orders);
 
     inline bool check_ord(int floor, direction_flag dir)
     { return (ord_log_[floor] | dir) != direction_flag::NONE; }

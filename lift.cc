@@ -1,7 +1,7 @@
 #include "lift.hh"
 
 lift::lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs) :
-    timed_obj(chronos),
+    timed_obj(chronos, false),
     disp_(disp),
     specs_(specs),
     ord_floor_(-1),
@@ -13,7 +13,7 @@ lift::lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs) :
     passengers()
 {
     //Wait for time to start
-    wait(0, WAIT_TIL, false);
+    wait(0, WAIT_TIL);
 
     //Lift 'til you drop
     while(!shutdown_)
@@ -27,7 +27,7 @@ void lift::step()
     {
         if (idle_time_ == specs_.T_idle_) close_doors();
         idle_time_++;
-        wait(1, WAIT_FOR, false);
+        wait(1, WAIT_FOR);
         return;
     }
 
@@ -38,7 +38,7 @@ void lift::step()
         if (**i == floor_) 
         {
             open_doors();
-            wait(specs_.T_out, WAIT_FOR, false);
+            wait(specs_.T_out, WAIT_FOR);
             i = passengers.erase(i);
         }
         else i++;
@@ -53,7 +53,7 @@ void lift::step()
         for (auto i = newcomers.begin(); i != newcomers.end() && passengers.size() < specs_.MAX_; i++)
         {
             person newcomer = std::move(newcomers.extract(i).value());
-            wait(specs_.T_in, WAIT_FOR, false);
+            wait(specs_.T_in, WAIT_FOR);
             passengers.insert(newcomer);
         }
         //For now - everyone who didn't fit dies)
@@ -78,14 +78,9 @@ void lift::step()
     else dir_ = 0;
 }
 
-bool lift::order(int floor, direction dir)
+void lift::order(int floor, direction dir)
 {
-    if (dir_ == 0)
-    {   
-        ord_floor_ = floor;
-        ord_dir_ = dir;
-        idle_time_ = 0;
-        return true;
-    }
-    else return false;
+    ord_floor_ = floor;
+    ord_dir_ = dir;
+    idle_time_ = 0;
 }

@@ -45,16 +45,18 @@ class timed_obj
 private:
     ticker& chronos_;
     std::unique_lock<std::mutex> lck_;
+    bool priority_;
 
 public:
     timed_obj(const timed_obj& that) = delete;
     timed_obj(timed_obj&& that) = default;
 
-    inline timed_obj(ticker& chronos) :
+    inline timed_obj(ticker& chronos, bool priority) :
         chronos_(chronos),
-        lck_(std::unique_lock(chronos.act_mut))
-    {} 
+        lck_(std::unique_lock(chronos.act_mut)),
+        priority_(priority)
+    { wait(0, wait_type::WAIT_TIL); } 
 
     //Waits for "time" ticks or until time=="time" (depending on "type") in ticker::start main cycle
-    void wait(int time, wait_type type, bool priority);
+    void wait(int time, wait_type type);
 };

@@ -29,17 +29,17 @@ private:
 
     //Makes sure doors are open
     inline void open_doors()
-    { if (doors_open_) wait(specs_.T_open_, WAIT_FOR, false); }
+    { if (doors_open_) wait(specs_.T_open_, wait_type::WAIT_FOR); }
 
     //Makes sure doors are closed
     inline void close_doors()
-    { if (!doors_open_) wait(specs_.T_open_, WAIT_FOR, false); }
+    { if (!doors_open_) wait(specs_.T_open_, wait_type::WAIT_FOR); }
 
     //Moves elevator in direction dir_
     inline void mov()
     { 
         close_doors();
-        if (dir_ != 0) wait(specs_.T_stage_, WAIT_FOR, false);
+        if (dir_ != 0) wait(specs_.T_stage_, wait_type::WAIT_FOR);
         floor_ += dir_;
     }
 
@@ -52,9 +52,16 @@ private:
 public:
     lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs);
 
-    //Give the lift an order - returns true if lift is idle, false otherwise
-    bool order(int floor, direction dir);
+    //Give the lift an order
+    void order(int floor, direction dir);
+
+    //Is the lift currently idle?
+    inline bool idle() const
+    { return dir_ == 0; }
 
     inline void shutdown()
     { shutdown_ = 0; }
+
+    inline int distance(int floor) const
+    { return std::abs(floor_ - floor); }
 };

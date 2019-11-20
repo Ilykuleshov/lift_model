@@ -12,9 +12,6 @@ lift::lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs) :
     dir_(0),
     passengers()
 {
-    //Wait for time to start
-    wait(0, WAIT_TIL);
-
     //Lift 'til you drop
     while(!shutdown_)
         step();

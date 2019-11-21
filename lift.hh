@@ -11,14 +11,13 @@ struct LIFTSPEC
     int T_out;
 };
 
-class lift : private timed_obj
+class lift : public timed_obj
 {
 private:
     dispatcher& disp_;
     const LIFTSPEC specs_;
 
-    int ord_floor_;
-    int ord_dir_;
+    order ord_;
 
     bool doors_open_;
     int floor_;
@@ -48,20 +47,18 @@ private:
     { dir_ = sgn(floor - floor_); }
 
     //Cycle step: from state <Lift arrived on floor "floor", doors closed>:
-    void step();
+    virtual void step();
 
 public:
     lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs);
 
     //Give the lift an order
-    void order(int floor, direction dir);
+    inline void give_order(order ord)
+    { if (!ord_) ord_ = ord; }
 
     //Is the lift currently idle?
     inline bool idle() const
-    { return dir_ == 0; }
-
-    inline void shutdown()
-    { shutdown_ = 0; }
+    { return idle_time_ != -1; }
 
     inline int distance(int floor) const
     { return std::abs(floor_ - floor); }

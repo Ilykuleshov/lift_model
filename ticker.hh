@@ -30,6 +30,7 @@ private:
 
     std::list<waiter> waiters_list;
     std::mutex act_mut;
+    int time = 0;
 
     friend class timed_obj;
 
@@ -48,17 +49,34 @@ private:
     ticker& chronos_;
     std::unique_lock<std::mutex> lck_;
     bool priority_;
+    bool shutdown_;
 
-public:
+protected:
     timed_obj(const timed_obj& that) = delete;
     timed_obj(timed_obj&& that) = default;
 
     inline timed_obj(ticker& chronos, bool priority) :
         chronos_(chronos),
         lck_(std::unique_lock(chronos.act_mut)),
-        priority_(priority)
-    { wait(0, wait_type::WAIT_TIL); } 
+        priority_(priority),
+        shutdown_(false)
+    {} 
 
     //Waits for "time" ticks or until time=="time" (depending on "type") in ticker::start main cycle
     void wait(int time, wait_type type);
+    virtual void step() = 0;
+
+public:
+    inline void shutdown() 
+    { shutdown_ = true; }
+
+       //Return current time
+    inline int get_time()
+    { return chronos_.time; }
+
+    void run()
+    { 
+        wait(0, WAIT_TIL);
+        while(!shutdown_) step(); 
+    }
 };

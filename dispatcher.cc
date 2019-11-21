@@ -21,16 +21,26 @@ std::multiset<person> dispatcher::clear_floor(int floor, direction dir)
     return res;
 }
 
-void dispatcher::service(event customer)
+void dispatcher::clear_done_ords()
 {
-    //Wait until newcomer.time
-    wait(customer.time, wait_type::WAIT_TIL);
+    if (ord_queue_.empty()) return;
+    for (order customer = ord_queue_.front(); !check_ord(customer); ord_queue_.pop()) 
+    {
+        if (ord_queue_.empty()) return;
+        customer = ord_queue_.front();
+    }
+}
+
+void dispatcher::try_order_lift()
+{
+    clear_done_ords();
+    order customer = ord_queue_.front();
 
     //Lambda-comparer:
     //idle lifts < busy lifts;
     //closer idle < farther idle;
     //closer busy < farther busy
-    auto liftdistcomp = [src=customer.src](const lift& a, const lift& b) -> bool 
+    auto liftdistcomp = [src=customer.floor](const lift& a, const lift& b) -> bool 
     { 
         if (a.idle() == b.idle()) return a.distance(src) < b.distance(src);
         
@@ -38,29 +48,53 @@ void dispatcher::service(event customer)
         else return false;
     };
 
-    //Determine order direction
-    direction dir = sgn(customer.dst - customer.src);
-
-    //Order closest idle lift
+    //Find closest lift
     auto closest_lift = std::min_element(lift_vec_.begin(), lift_vec_.end(), liftdistcomp);
-    if (closest_lift->idle()) closest_lift->order(customer.dst, dir);
 
-    //Add person
-    floors_[customer.src].emplace(std::make_unique<int>(customer.dst));
-
-    //Place order
-    ord_log_[customer.src] = ord_log_[customer.src] | dir_to_flag(dir);
+    //If it's idle, order it && remove order
+    if (closest_lift->idle()) 
+    {
+        ord_queue_.pop();
+        closest_lift->give_order(customer);
+    }
 }
 
-dispatcher::dispatcher(ticker& chronos, std::vector<event> orders) :
-    timed_obj(chronos, true)
+void dispatcher::check_timeline()
 {
-    //Wait for time to start
-    wait(0, wait_type::WAIT_TIL);
+    int cur_time = get_time();
 
-    //Sort timeline for correct behaviour (first wait for first)
-    std::sort(orders.begin(), orders.end());
+    while (timeline_.front().time == cur_time)
+    {
+        event customer = timeline_.front();
+        timeline_.pop();
 
-    for (auto& i : orders)
-        service(i);
+        floors_[customer.src].emplace(std::make_unique<int>(customer.dst));
+        ord_log_[customer.src] = ord_log_[customer.src] | dir_to_flag(customer.dst);
+        ord_queue_.push({ customer.src, dir_to_flag(sgn(customer.dst - customer.src))});
+    }
+}
+
+void dispatcher::step()
+{
+    if (timeline_.empty())
+    {
+        for (auto& i : lift_vec_) 
+        {
+            //Wait for lift to finish & shutdown them
+            while (i.idle()) wait(1, WAIT_FOR);
+            i.shutdown();
+        }
+        shutdown();
+    }
+
+    //Check, if next customer from timeline has arrived
+    check_timeline();
+
+    if (!ord_queue_.empty()) 
+    {
+        order customer = ord_queue_.front();
+        ord_queue_.pop();
+    }
+
+    wait(1, WAIT_FOR);
 }

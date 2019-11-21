@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <set>
+#include <queue>
 
 #include "ticker.hh"
 
@@ -43,6 +44,8 @@ inline direction_flag dir_to_flag(const direction& that)
     return DIR_TO_FLAG[that + 1];
 }
 
+const std::array<int, 3> FLAG_TO_DIR = { 0, 1, -1 };
+
 inline int sgn(int val)
 { return (0 < val) - (val < 0); }
 
@@ -52,32 +55,50 @@ typedef std::unique_ptr<int> person;
 inline bool operator<(const person& a, const person& b)
 { return *a < *b; }
 
-struct event
+struct order
 {
-    int time;
-    int src;
-    int dst;
+    int floor;
+    direction_flag dir;
+
+    inline operator bool()
+    { return dir != NONE; }
 };
 
-inline bool operator<(const event& a, const event& b)
-{ return a.time < b.time; }
+struct event
+{
+    int src;
+    int dst;
+    int time;
+};
 
-class dispatcher : private timed_obj
+class dispatcher : public timed_obj
 {
 private:
     std::vector<lift> lift_vec_;
     std::vector<std::multiset<person>> floors_;
     std::vector<direction_flag> ord_log_;
+    std::queue<order> ord_queue_;
 
-    //Service a new customer
-    void service(event customer);
+    std::queue<event> timeline_;
+
+    //Remove finished orders from the front of the queue
+    void clear_done_ords();
+
+    //Try to order a lift front of ord_queue. Do nothing, if no lifts availible
+    void try_order_lift();
+    void check_timeline();
+
+    virtual void step();
 
 public:
-    //sort timeline & start cycle
-    dispatcher(ticker& chronos, std::vector<event> orders);
+    //It is implied, that timeline is sorted (lowest time first)
+    dispatcher(ticker& chronos, std::queue<event> timeline) :
+        timed_obj(chronos, true),
+        timeline_(timeline)
+    {}
 
-    inline bool check_ord(int floor, direction_flag dir)
-    { return (ord_log_[floor] | dir) != direction_flag::NONE; }
+    inline bool check_ord(order ord)
+    { return (ord_log_[ord.floor] | ord.dir) != direction_flag::NONE; }
 
     //Check floor for people going in specified direction, move them to multiset & return
     std::multiset<person> clear_floor(int floor, direction dir);

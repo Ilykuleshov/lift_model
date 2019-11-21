@@ -4,32 +4,38 @@ lift::lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs) :
     timed_obj(chronos, false),
     disp_(disp),
     specs_(specs),
-    ord_floor_(-1),
-    ord_dir_(0),
+    ord_({0, NONE}),
     doors_open_(false),
     floor_(0),
     idle_time_(0),
     dir_(0),
     passengers()
-{
-    //Lift 'til you drop
-    while(!shutdown_)
-        step();
-}
+{}
 
 void lift::step()
 {
-    //If dir is 0, then lift is idle, skip turn and close doors if needed
-    if (dir_ == 0) 
+    //If dir is 0, then lift is empty, close doors & check for orders
+    if (dir_ == NONE) 
     {
-        if (idle_time_ == specs_.T_idle_) close_doors();
-        idle_time_++;
-        wait(1, WAIT_FOR);
-        return;
+        if (doors_open_)
+        {
+            wait(specs_.T_idle_, WAIT_FOR);
+            close_doors();
+        }
+
+        //Cycle, waiting for orders
+        idle_time_ = 0;
+        while (!ord_)
+        {
+            idle_time_++;
+            wait(1, WAIT_FOR);
+        }
+
+        idle_time_ = -1;
+        dir_ = FLAG_TO_DIR[ord_.dir];
     }
 
     //Process leavers
-    int leaving = 0;
     for (auto i = passengers.begin(); i != passengers.end();) 
     {
         if (**i == floor_) 
@@ -42,7 +48,7 @@ void lift::step()
     }
 
     //Check ppl on that floor going in needed direction (through dispatcher).
-    if (disp_.check_ord(floor_, dir_to_flag(dir_)))
+    if (disp_.check_ord({floor_, dir_to_flag(dir_)}))
     {
         open_doors();
         std::multiset<person> newcomers = disp_.clear_floor(floor_, dir_);
@@ -57,27 +63,20 @@ void lift::step()
     }
 
     //The order could have been completed by now
-    if (disp_.check_ord(ord_floor_, dir_to_flag(ord_dir_)))
+    if (disp_.check_ord(ord_))
     {
-        ord_floor_ = -1;
-        ord_dir_ = 0;
+        ord_.floor = -1;
+        ord_.dir = NONE;
     }
 
     //If there are passengers, fullfill their targets
     if (!passengers.empty()) mov();
     //Else move to order, if ther is one
-    else if (ord_dir_ != 0)
+    else if (ord_)
     {
-        setdir(ord_floor_);
+        setdir(ord_.floor);
         mov();
     }
     //Otherwise we're idle
     else dir_ = 0;
-}
-
-void lift::order(int floor, direction dir)
-{
-    ord_floor_ = floor;
-    ord_dir_ = dir;
-    idle_time_ = 0;
 }

@@ -16,7 +16,7 @@ void timed_obj::wait(int time, wait_type type)
 
 void ticker::start()
 {
-    for (long time = 0; !waiters_list.empty(); time++)
+    for (; !waiters_list.empty(); time++)
     {   
         //Process waiters list
         for (auto it = waiters_list.begin(); it != waiters_list.end();)

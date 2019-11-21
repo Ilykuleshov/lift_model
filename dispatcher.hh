@@ -74,7 +74,7 @@ struct event
 class dispatcher : public timed_obj
 {
 private:
-    std::vector<lift> lift_vec_;
+    std::vector<lift>& lift_vec_;
     std::vector<std::multiset<person>> floors_;
     std::vector<direction_flag> ord_log_;
     std::queue<order> ord_queue_;
@@ -92,8 +92,11 @@ private:
 
 public:
     //It is implied, that timeline is sorted (lowest time first)
-    dispatcher(ticker& chronos, std::queue<event> timeline) :
+    dispatcher(ticker& chronos, const int floor_amnt, std::vector<lift>& lift_vec, std::queue<event> timeline) :
         timed_obj(chronos, true),
+        lift_vec_(lift_vec),
+        floors_(floor_amnt),
+        ord_log_(floor_amnt, NONE),
         timeline_(timeline)
     {}
 

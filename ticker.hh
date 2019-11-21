@@ -49,7 +49,7 @@ private:
     ticker& chronos_;
     std::unique_lock<std::mutex> lck_;
     bool priority_;
-    bool shutdown_;
+    bool shutdown_ = false;
 
 protected:
     timed_obj(const timed_obj& that) = delete;
@@ -57,9 +57,8 @@ protected:
 
     inline timed_obj(ticker& chronos, bool priority) :
         chronos_(chronos),
-        lck_(std::unique_lock(chronos.act_mut)),
-        priority_(priority),
-        shutdown_(false)
+        lck_(chronos.act_mut),
+        priority_(priority)
     {} 
 
     //Waits for "time" ticks or until time=="time" (depending on "type") in ticker::start main cycle
@@ -78,5 +77,6 @@ public:
     { 
         wait(0, WAIT_TIL);
         while(!shutdown_) step(); 
+        printf("OBJ DONE\n");
     }
 };

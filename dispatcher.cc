@@ -63,8 +63,10 @@ void dispatcher::check_timeline()
 {
     int cur_time = get_time();
 
+    printf("%d ?= %d\n", cur_time, timeline_.front().time);
     while (timeline_.front().time == cur_time)
     {
+        printf("New cust\n");
         event customer = timeline_.front();
         timeline_.pop();
 
@@ -76,15 +78,23 @@ void dispatcher::check_timeline()
 
 void dispatcher::step()
 {
-    if (timeline_.empty())
+    printf("DISP STEP\n");
+    if (timeline_.empty() && ord_queue_.empty())
     {
+        printf("EMPTY\n");
         for (auto& i : lift_vec_) 
         {
+            printf("WAIT FOR LIFT\n");
             //Wait for lift to finish & shutdown them
-            while (i.idle()) wait(1, WAIT_FOR);
+            while (!i.idle()) wait(1, WAIT_FOR);
             i.shutdown();
+            printf("DONE LIFTWAITING\n");
         }
+
+        wait(1, WAIT_FOR);
+        printf("SHUTDOWN\n");
         shutdown();
+        return;
     }
 
     //Check, if next customer from timeline has arrived
@@ -96,5 +106,6 @@ void dispatcher::step()
         ord_queue_.pop();
     }
 
+    printf("DISP WAITING\n");
     wait(1, WAIT_FOR);
 }

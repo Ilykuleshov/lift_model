@@ -17,15 +17,13 @@ private:
     dispatcher& disp_;
     const LIFTSPEC specs_;
 
-    order ord_;
+    order ord_ = {0, NONE};
 
-    bool doors_open_;
-    int floor_;
-    int idle_time_;
-    direction dir_;
+    bool doors_open_ = false;
+    int floor_ = 0;
+    int idle_time_ = 0;
+    direction dir_ = NONE;
     std::multiset<person> passengers;
-
-    bool shutdown_;
 
     //Makes sure doors are open
     inline void open_doors()
@@ -50,7 +48,11 @@ private:
     virtual void step();
 
 public:
-    lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs);
+    inline lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs) :
+        timed_obj(chronos, false),
+        disp_(disp),
+        specs_(specs)
+    {}
 
     //Give the lift an order
     inline void give_order(order ord)

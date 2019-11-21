@@ -1,19 +1,8 @@
 #include "lift.hh"
 
-lift::lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs) :
-    timed_obj(chronos, false),
-    disp_(disp),
-    specs_(specs),
-    ord_({0, NONE}),
-    doors_open_(false),
-    floor_(0),
-    idle_time_(0),
-    dir_(0),
-    passengers()
-{}
-
 void lift::step()
 {
+    printf("!!Lift step\n");
     //If dir is 0, then lift is empty, close doors & check for orders
     if (dir_ == NONE) 
     {
@@ -28,12 +17,15 @@ void lift::step()
         while (!ord_)
         {
             idle_time_++;
+            printf("IDLE, WAITING (ord dir %d)\n", (int) ord_.dir);
             wait(1, WAIT_FOR);
         }
 
         idle_time_ = -1;
         dir_ = FLAG_TO_DIR[ord_.dir];
     }
+
+    printf("LIFT NON IDLE\n");
 
     //Process leavers
     for (auto i = passengers.begin(); i != passengers.end();) 

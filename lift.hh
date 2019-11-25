@@ -17,7 +17,7 @@ private:
     dispatcher& disp_;
     const LIFTSPEC specs_;
 
-    order ord_ = {0, NONE};
+    order ord_;
 
     bool doors_open_ = false;
     int floor_ = 0;
@@ -27,17 +27,38 @@ private:
 
     //Makes sure doors are open
     inline void open_doors()
-    { if (doors_open_) wait(specs_.T_open_, wait_type::WAIT_FOR); }
+    { 
+        if (!doors_open_) 
+        {
+            puts("Opening doors...");
+            wait(specs_.T_open_, wait_type::WAIT_FOR);
+            doors_open_ = true;
+            puts("Doors open!");
+        }
+    }
 
     //Makes sure doors are closed
     inline void close_doors()
-    { if (!doors_open_) wait(specs_.T_open_, wait_type::WAIT_FOR); }
+    { 
+        if (doors_open_)
+        {
+            puts("Closing doors...");
+            wait(specs_.T_open_, wait_type::WAIT_FOR);
+            doors_open_ = false;
+            puts("Doors closed!");
+        }
+    }
 
     //Moves elevator in direction dir_
     inline void mov()
     { 
         close_doors();
-        if (dir_ != 0) wait(specs_.T_stage_, wait_type::WAIT_FOR);
+        if (dir_ != 0) 
+        {
+            printf("Moving %d...\n", dir_);
+            wait(specs_.T_stage_, wait_type::WAIT_FOR);
+            printf("Moved!\n");
+        }
         floor_ += dir_;
     }
 
@@ -51,8 +72,9 @@ public:
     inline lift(ticker& chronos, dispatcher& disp, const LIFTSPEC specs) :
         timed_obj(chronos, false),
         disp_(disp),
-        specs_(specs)
-    {}
+        specs_(specs),
+        ord_()
+    { printf("made ord=%d\n", ord_.dir); }
 
     //Give the lift an order
     inline void give_order(order ord)

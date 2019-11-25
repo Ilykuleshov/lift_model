@@ -57,9 +57,10 @@ inline bool operator<(const person& a, const person& b)
 
 struct order
 {
-    int floor;
-    direction_flag dir;
+    int floor = 0;
+    direction_flag dir = NONE;
 
+    order() = default;
     inline operator bool()
     { return dir != NONE; }
 };
@@ -101,7 +102,12 @@ public:
     {}
 
     inline bool check_ord(order ord)
-    { return (ord_log_[ord.floor] | ord.dir) != direction_flag::NONE; }
+    {
+        printf("Floor %d\n", ord.floor);
+        printf("%d, %d\n", ord_log_[ord.floor], ord.dir);
+        printf(" -> %d\n", (ord_log_[ord.floor] & ord.dir));
+        return (ord_log_[ord.floor] & ord.dir) != direction_flag::NONE;
+    }
 
     //Check floor for people going in specified direction, move them to multiset & return
     std::multiset<person> clear_floor(int floor, direction dir);

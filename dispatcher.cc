@@ -8,13 +8,17 @@ std::multiset<person> dispatcher::clear_floor(int floor, direction dir)
     { return res; }
 
     auto& flr = floors_[floor];
+
+    printf("Analizyng floor: ppl %d, ord_dir %d\n", (int) flr.size(), ord_log_[floor]);
+    for (auto& i : flr) printf("Person going to %d\n", *i);
+
     if (dir == -1) //Going down
-        while(**(flr.begin()) < floor)  //Get ppl w\ smallest dst (start of sorted container)
+        while(!flr.empty() && (**(flr.begin())) < floor)  //Get ppl w\ smallest dst (start of sorted container)
             res.insert(std::move(flr.extract(flr.begin()).value()));
 
-    else if (dir == 1)
-        while(**(flr.rbegin()) > floor) //Get ppl w\ largest dst (end of sorted container)
-            res.insert(std::move(flr.extract(std::prev(flr.end())).value()));
+    else if (dir == 1) //Going up
+        while(!flr.empty() && (**(--flr.end())) > floor) //Get ppl w\ largest dst (end of sorted container)
+            res.insert(std::move(flr.extract(--flr.end()).value()));
 
     ord_log_[floor] = (direction_flag)(ord_log_[floor] - dir_to_flag(dir)); //Order is done
 
@@ -23,7 +27,11 @@ std::multiset<person> dispatcher::clear_floor(int floor, direction dir)
 
 void dispatcher::clear_done_ords()
 {
-    if (ord_queue_.empty()) return;
+    if (ord_queue_.empty()) 
+    {
+        printf("empty ORD queue\n");
+        return;
+    }
     for (order customer = ord_queue_.front(); !check_ord(customer); ord_queue_.pop()) 
     {
         if (ord_queue_.empty()) return;
@@ -34,6 +42,7 @@ void dispatcher::clear_done_ords()
 void dispatcher::try_order_lift()
 {
     clear_done_ords();
+    if (ord_queue_.empty()) return;
     order customer = ord_queue_.front();
 
     //Lambda-comparer:
@@ -66,8 +75,8 @@ void dispatcher::check_timeline()
     printf("%d ?= %d\n", cur_time, timeline_.front().time);
     while (timeline_.front().time == cur_time)
     {
-        printf("New cust\n");
         event customer = timeline_.front();
+        printf("New customer (from %d to %d)!\n", customer.src, customer.dst);
         timeline_.pop();
 
         floors_[customer.src].emplace(std::make_unique<int>(customer.dst));
@@ -91,7 +100,6 @@ void dispatcher::step()
             printf("DONE LIFTWAITING\n");
         }
 
-        wait(1, WAIT_FOR);
         printf("SHUTDOWN\n");
         shutdown();
         return;
@@ -99,12 +107,7 @@ void dispatcher::step()
 
     //Check, if next customer from timeline has arrived
     check_timeline();
-
-    if (!ord_queue_.empty()) 
-    {
-        order customer = ord_queue_.front();
-        ord_queue_.pop();
-    }
+    try_order_lift();
 
     printf("DISP WAITING\n");
     wait(1, WAIT_FOR);

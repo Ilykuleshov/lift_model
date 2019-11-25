@@ -19,17 +19,16 @@ private:
     {
         int time;
         std::condition_variable cv;
-        wait_type type;
 
-        inline waiter(int t, wait_type tp) :
+        inline waiter(int t) :
             time(t),
-            cv(),
-            type(tp)
+            cv()
         {}
     };
 
     std::list<waiter> waiters_list;
     std::mutex act_mut;
+    std::condition_variable cv_waiter_act;
     int time = 0;
 
     friend class timed_obj;
@@ -49,7 +48,6 @@ private:
     ticker& chronos_;
     std::unique_lock<std::mutex> lck_;
     bool priority_;
-    bool shutdown_ = false;
 
 protected:
     timed_obj(const timed_obj& that) = delete;
@@ -65,6 +63,8 @@ protected:
     void wait(int time, wait_type type);
     virtual void step() = 0;
 
+    bool shutdown_ = false;
+    
 public:
     inline void shutdown() 
     { shutdown_ = true; }
@@ -75,7 +75,9 @@ public:
 
     void run()
     { 
+        printf("OBJ START\n");
         wait(0, WAIT_TIL);
+        printf("OBJ RUN\n");
         while(!shutdown_) step(); 
         printf("OBJ DONE\n");
     }

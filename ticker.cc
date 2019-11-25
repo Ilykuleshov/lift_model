@@ -4,16 +4,20 @@
 
 void timed_obj::wait(int time, wait_type type)
 {
-    if (priority_) 
+    if (type == WAIT_FOR) time += chronos_.time;
+    if (priority_)
     {
-        auto& w = chronos_.waiters_list.emplace_front(time, type); //Construct waiter in-place
+        auto& w = chronos_.waiters_list.emplace_front(time); //Construct waiter in-place
         w.cv.wait(lck_); //Condition-variable wait
     }
     else //Same, but add to end
     {
-        auto& w = chronos_.waiters_list.emplace_back(time, type);
+        auto& w = chronos_.waiters_list.emplace_back(time);
         w.cv.wait(lck_);
     }
+
+    chronos_.cv_waiter_act.notify_one();
+    printf("WAITER UNLOCKED\n");
 }
 
 void ticker::start()
@@ -22,42 +26,27 @@ void ticker::start()
     {   
         std::cout << time << "\n";
 
-        //New waiters are added to list during cycle, we want to iterate only on old, from begin to last
-        auto last = std::prev(waiters_list.end());
-        bool final_cycle = false;
-
         //Process waiters list
-        int i = 0;
-        for (auto it = waiters_list.begin(); !final_cycle;)
+        for (auto it = waiters_list.begin(); it != waiters_list.end();)
         {
-            printf("Waiter #%d\n", i);
-            i++;
-            if (it == last) final_cycle = true;
-            if (it->time < 0) throw std::out_of_range("Waiter's time < 0");
+            if (it->time < time) throw std::out_of_range("Waiter skipped");
 
-            bool time_out = false;
-            switch(it->type)
+            if (it->time == time)
             {
-                case WAIT_FOR:
-                it->time--;
-                printf("WAITER TIME %d\n", it->time);
-                time_out = (it->time == 0);
-                break;
+                //Aquire act_mut
+                std::unique_lock<std::mutex> waiter_lck(act_mut);
 
-                case WAIT_TIL:
-                time_out = (it->time == time);
-                if (it->time < time) throw std::out_of_range("Waiter skipped");
-                break;
-            }
-
-            if (time_out)
-            {
-                printf("WAIT TYPE %d\n", it->type);
+                //Notify current waiter (will be immediately blocked, locking act_mut)
                 it->cv.notify_all();
-                printf("LOCKING\n");
-                std::unique_lock<std::mutex> lck(act_mut);
-                printf("LOCKED\n");
-                it = waiters_list.erase(it);
+
+                //Unblock waiter, wait untill thread waits again
+                printf("WAITING FOR WAITER-------------------\n");
+                cv_waiter_act.wait(waiter_lck);
+                printf("WAITER DONE--------------------------\n");
+                
+                //Remove waited waiter, start from the start (in case he added waiters)
+                waiters_list.erase(it);
+                it = waiters_list.begin();
             }
             else it++;
         }

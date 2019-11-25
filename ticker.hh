@@ -80,5 +80,7 @@ public:
         printf("OBJ RUN\n");
         while(!shutdown_) step(); 
         printf("OBJ DONE\n");
+
+        chronos_.cv_waiter_act.notify_one();//MAYBE
     }
 };

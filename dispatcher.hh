@@ -6,6 +6,8 @@
 
 #include "ticker.hh"
 
+#define printf(str, ...) printf(ANSI_COLOR_MAGENTA str __VA_OPT__(,) __VA_ARGS__)
+
 class lift;
 
 //Direction flag - for economic floor-order storage
@@ -102,13 +104,10 @@ public:
     {}
 
     inline bool check_ord(order ord)
-    {
-        printf("Floor %d\n", ord.floor);
-        printf("%d, %d\n", ord_log_[ord.floor], ord.dir);
-        printf(" -> %d\n", (ord_log_[ord.floor] & ord.dir));
-        return (ord_log_[ord.floor] & ord.dir) != direction_flag::NONE;
-    }
+    { return (ord_log_[ord.floor] & ord.dir) != direction_flag::NONE; }
 
     //Check floor for people going in specified direction, move them to multiset & return
     std::multiset<person> clear_floor(int floor, direction dir);
 };
+
+#undef printf

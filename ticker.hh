@@ -3,6 +3,7 @@
 #include <memory>
 #include <condition_variable>
 #include <list>
+#include "printf_colors.hh"
 
 class timed_obj;
 
@@ -73,14 +74,15 @@ public:
     inline int get_time()
     { return chronos_.time; }
 
-    void run()
+    inline void run()
     { 
-        printf("OBJ START\n");
+        printf(ANSI_COLOR_RED "OBJ START\n");
         wait(0, WAIT_TIL);
-        printf("OBJ RUN\n");
+        printf(ANSI_COLOR_RED "OBJ RUN\n");
         while(!shutdown_) step(); 
-        printf("OBJ DONE\n");
+        printf(ANSI_COLOR_RED "OBJ DONE\n");
 
-        chronos_.cv_waiter_act.notify_one();//MAYBE
+        chronos_.cv_waiter_act.notify_one();
+        lck_.unlock();
     }
 };

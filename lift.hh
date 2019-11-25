@@ -3,13 +3,16 @@
 
 struct LIFTSPEC
 {
-    int MAX_;
-    int T_stage_;
-    int T_open_;
-    int T_idle_;
+    int MAX;
+    int T_stage;
+    int T_open;
+    int T_idle;
+    int T_close;
     int T_in;
     int T_out;
 };
+
+#define printf(str, ...) printf(ANSI_COLOR_CYAN str __VA_OPT__(,) __VA_ARGS__)
 
 class lift : public timed_obj
 {
@@ -30,10 +33,10 @@ private:
     { 
         if (!doors_open_) 
         {
-            puts("Opening doors...");
-            wait(specs_.T_open_, wait_type::WAIT_FOR);
+            printf("Opening doors...\n");
+            wait(specs_.T_open, wait_type::WAIT_FOR);
             doors_open_ = true;
-            puts("Doors open!");
+            printf("Doors open!\n");
         }
     }
 
@@ -42,10 +45,10 @@ private:
     { 
         if (doors_open_)
         {
-            puts("Closing doors...");
-            wait(specs_.T_open_, wait_type::WAIT_FOR);
+            printf("Closing doors...\n");
+            wait(specs_.T_close, wait_type::WAIT_FOR);
             doors_open_ = false;
-            puts("Doors closed!");
+            printf("Doors closed!\n");
         }
     }
 
@@ -56,7 +59,7 @@ private:
         if (dir_ != 0) 
         {
             printf("Moving %d...\n", dir_);
-            wait(specs_.T_stage_, wait_type::WAIT_FOR);
+            wait(specs_.T_stage, wait_type::WAIT_FOR);
             printf("Moved!\n");
         }
         floor_ += dir_;
@@ -74,7 +77,7 @@ public:
         disp_(disp),
         specs_(specs),
         ord_()
-    { printf("made ord=%d\n", ord_.dir); }
+    {}
 
     //Give the lift an order
     inline void give_order(order ord)
@@ -87,3 +90,5 @@ public:
     inline int distance(int floor) const
     { return std::abs(floor_ - floor); }
 };
+
+#undef printf

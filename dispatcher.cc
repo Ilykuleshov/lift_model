@@ -1,6 +1,8 @@
 #include "lift.hh"
 #include <algorithm>
 
+#define printf(str, ...) printf(ANSI_COLOR_MAGENTA str __VA_OPT__(,) __VA_ARGS__)
+
 std::multiset<person> dispatcher::clear_floor(int floor, direction dir)
 {
     std::multiset<person> res;
@@ -9,7 +11,7 @@ std::multiset<person> dispatcher::clear_floor(int floor, direction dir)
 
     auto& flr = floors_[floor];
 
-    printf("Analizyng floor: ppl %d, ord_dir %d\n", (int) flr.size(), ord_log_[floor]);
+    printf("Lift on floor [%d]: %d ppl, order dir: %d | lift dir %d\n", floor, (int) flr.size(), ord_log_[floor], dir);
     for (auto& i : flr) printf("Person going to %d\n", *i);
 
     if (dir == -1) //Going down
@@ -27,11 +29,7 @@ std::multiset<person> dispatcher::clear_floor(int floor, direction dir)
 
 void dispatcher::clear_done_ords()
 {
-    if (ord_queue_.empty()) 
-    {
-        printf("empty ORD queue\n");
-        return;
-    }
+    if (ord_queue_.empty()) return;
     for (order customer = ord_queue_.front(); !check_ord(customer); ord_queue_.pop()) 
     {
         if (ord_queue_.empty()) return;
@@ -71,36 +69,37 @@ void dispatcher::try_order_lift()
 void dispatcher::check_timeline()
 {
     int cur_time = get_time();
-
-    printf("%d ?= %d\n", cur_time, timeline_.front().time);
-    while (timeline_.front().time == cur_time)
+    if (timeline_.empty()) return;
+    printf("Check timeline: %d ?= %d\n", cur_time, timeline_.front().time);
+    while (!timeline_.empty() && timeline_.front().time == cur_time)
     {
         event customer = timeline_.front();
-        printf("New customer (from %d to %d)!\n", customer.src, customer.dst);
         timeline_.pop();
+        printf("New customer (%d -> %d)\n", customer.src, customer.dst);
 
+        direction_flag customer_dir = dir_to_flag(sgn(customer.dst - customer.src));
         floors_[customer.src].emplace(std::make_unique<int>(customer.dst));
-        ord_log_[customer.src] = ord_log_[customer.src] | dir_to_flag(customer.dst);
+        ord_log_[customer.src] = ord_log_[customer.src] | customer_dir;
         ord_queue_.push({ customer.src, dir_to_flag(sgn(customer.dst - customer.src))});
     }
 }
 
 void dispatcher::step()
 {
-    printf("DISP STEP\n");
+    printf("!Dispatcher step! (%d orders)\n", ord_queue_.size());
     if (timeline_.empty() && ord_queue_.empty())
     {
-        printf("EMPTY\n");
+        printf("Start shutdown process\n");
         for (auto& i : lift_vec_) 
         {
-            printf("WAIT FOR LIFT\n");
+            printf("Wait for lifts\n");
             //Wait for lift to finish & shutdown them
             while (!i.idle()) wait(1, WAIT_FOR);
             i.shutdown();
-            printf("DONE LIFTWAITING\n");
+            printf("Lifts all idle\n");
         }
 
-        printf("SHUTDOWN\n");
+        printf("Shutdown\n");
         shutdown();
         return;
     }
@@ -109,6 +108,8 @@ void dispatcher::step()
     check_timeline();
     try_order_lift();
 
-    printf("DISP WAITING\n");
+    printf("Cycle end\n");
     wait(1, WAIT_FOR);
 }
+
+#undef printf

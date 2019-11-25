@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#define printf(str, ...) printf(ANSI_COLOR_RESET str __VA_OPT__(,) __VA_ARGS__)
+
 void timed_obj::wait(int time, wait_type type)
 {
     if (type == WAIT_FOR) time += chronos_.time;
@@ -17,14 +19,13 @@ void timed_obj::wait(int time, wait_type type)
     }
 
     chronos_.cv_waiter_act.notify_one();
-    printf("WAITER UNLOCKED\n");
 }
 
 void ticker::start()
 {
     for (; !waiters_list.empty(); time++)
-    {   
-        std::cout << time << "\n";
+    {  
+        printf("/--------------------%d-------------------\\\n", time);
 
         //Process waiters list
         for (auto it = waiters_list.begin(); it != waiters_list.end();)
@@ -36,7 +37,7 @@ void ticker::start()
                 //Aquire act_mut
                 std::unique_lock<std::mutex> waiter_lck(act_mut);
 
-                //Notify current waiter (will be immediately blocked, locking act_mut)
+                //Notify current waiter (will be immediately blocked, trying to lock act_mut)
                 it->cv.notify_all();
 
                 //Unblock waiter, wait untill thread waits again
@@ -52,3 +53,5 @@ void ticker::start()
         }
     }
 }
+
+#undef printf

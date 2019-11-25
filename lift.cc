@@ -1,14 +1,17 @@
 #include "lift.hh"
 
+#define printf(str, ...) printf(ANSI_COLOR_CYAN str __VA_OPT__(,) __VA_ARGS__)
+
 void lift::step()
 {
-    printf("!!Lift step: order %d\n", ord_.dir);
+    printf("!Lift step! (floor=[%d], dir=[%d])\n", floor_, dir_);
     //If dir is 0, then lift is empty, close doors & check for orders
     if (dir_ == NONE) 
     {
         if (doors_open_)
         {
-            wait(specs_.T_idle_, WAIT_FOR);
+            printf("Waiting for idle time\n");
+            wait(specs_.T_idle, WAIT_FOR);
             close_doors();
         }
 
@@ -16,21 +19,24 @@ void lift::step()
         idle_time_ = 0;
         while (!ord_)
         {
-            if (shutdown_) return;
+            printf("Idle, waiting for orders\n");
+
+            if (shutdown_)
+            {
+                printf("Lift shutdown\n");
+                return;
+            }
+
             idle_time_++;
-            printf("IDLE, WAITING (ord dir %d)\n", (int) ord_.dir);
             wait(1, WAIT_FOR);
         }
 
-        printf("GOT ORDER %d\n", (int) ord_.dir);
+        printf("Order{ dir %d, floor %d }\n", (int) ord_.dir, ord_.floor);
         idle_time_ = -1;
         dir_ = FLAG_TO_DIR[ord_.dir];
     }
 
-    printf("LIFT NON IDLE\n");
-
     //Process leavers
-    printf("PEOPLE LEAVING (floor %d):\n", floor_);
     for (auto i = passengers.begin(); i != passengers.end();) 
     {
         if (**i == floor_) 
@@ -47,11 +53,11 @@ void lift::step()
     //Check ppl on that floor going in needed direction (through dispatcher).
     if (disp_.check_ord({floor_, dir_to_flag(dir_)}))
     {
-        printf("Ppl entering (floor %d)...\n", floor_);
+        printf("People entering (floor %d)...\n", floor_);
         open_doors();
         std::multiset<person> newcomers = disp_.clear_floor(floor_, dir_);
 
-        for (auto i = newcomers.begin(); i != newcomers.end() && passengers.size() < specs_.MAX_; i++)
+        for (auto i = newcomers.begin(); i != newcomers.end() && passengers.size() < specs_.MAX; i++)
         {
             person newcomer = std::move(newcomers.extract(i).value());
             printf("Person (%d->%d) going in...\n", floor_, *newcomer);
@@ -72,13 +78,20 @@ void lift::step()
     }
 
     //If there are passengers, fullfill their targets
-    if (!passengers.empty()) mov();
+    if (!passengers.empty())
+    {
+        printf("Moving for passengers\n");
+        mov();
+    }
     //Else move to order, if ther is one
     else if (ord_)
     {
+        printf("Moving towards order (floor %d, dir %d)\n", ord_.floor, ord_.dir);
         setdir(ord_.floor);
         mov();
     }
     //Otherwise we're idle
     else dir_ = 0;
 }
+
+#undef prinf
